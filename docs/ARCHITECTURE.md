@@ -69,7 +69,7 @@ Responsibilities:
 - Find visible `Accept` buttons in task table rows.
 - Extract task row data before clicking.
 - Save accepted task records to SQLite.
-- Schedule another check after 1 second when a check accepts one or more tasks.
+- Schedule another check using the configured success recheck delay when a check accepts one or more tasks.
 
 ## Control Flow
 
@@ -87,7 +87,7 @@ This keeps the UI and automation loosely coupled while remaining simple enough t
 
 The dashboard interval is an idle polling interval, not a delay after every successful acceptance.
 
-- If a check accepts at least one task, LingBot schedules the next check after 1 second.
+- If a check accepts at least one task, LingBot schedules the next check using the configured success recheck delay.
 - If a check accepts no tasks, LingBot waits for the configured interval before checking again.
 
 This allows LingBot to drain newly available tasks quickly while still avoiding constant reloads when no work is available.

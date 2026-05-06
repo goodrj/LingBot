@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const {
   getStatus,
+  setTiming,
   enqueueCommand,
   getCounts,
   listTasks,
@@ -39,7 +40,7 @@ app.get("/api/tasks", (req, res) => {
 
 app.post("/api/commands", (req, res) => {
   const command = String(req.body.command || "");
-  const allowed = new Set(["start", "stop", "restart", "setInterval"]);
+  const allowed = new Set(["start", "stop", "restart", "setInterval", "setSuccessRecheck"]);
   if (!allowed.has(command)) {
     return res.status(400).json({ error: "Unknown command." });
   }
@@ -49,7 +50,19 @@ app.post("/api/commands", (req, res) => {
     return res.status(400).json({ error: "Interval must be at least 1000 ms." });
   }
 
-  enqueueCommand(command, intervalMs);
+  const successRecheckMs = req.body.successRecheckMs == null ? null : Number(req.body.successRecheckMs);
+  if (successRecheckMs != null && (!Number.isFinite(successRecheckMs) || successRecheckMs < 100)) {
+    return res.status(400).json({ error: "Success recheck delay must be at least 100 ms." });
+  }
+
+  const status = getStatus();
+  if (command === "setInterval") {
+    setTiming(intervalMs, status.successRecheckMs);
+  } else if (command === "setSuccessRecheck") {
+    setTiming(status.intervalMs, successRecheckMs);
+  }
+
+  enqueueCommand(command, intervalMs, successRecheckMs);
   res.status(202).json({ ok: true });
 });
 

@@ -9,12 +9,16 @@ fs.mkdirSync(dataDir, { recursive: true });
 const db = new Database(path.join(dataDir, "linguana-bot.sqlite"));
 db.pragma("journal_mode = WAL");
 
+const DEFAULT_INTERVAL_MS = 5000;
+const DEFAULT_SUCCESS_RECHECK_MS = 1000;
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS bot_status (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     state TEXT NOT NULL,
     message TEXT,
     interval_ms INTEGER NOT NULL,
+    success_recheck_ms INTEGER NOT NULL DEFAULT 1000,
     updated_at TEXT NOT NULL
   );
 
@@ -35,6 +39,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     command TEXT NOT NULL,
     interval_ms INTEGER,
+    success_recheck_ms INTEGER,
     created_at TEXT NOT NULL,
     processed_at TEXT
   );
@@ -44,27 +49,49 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_commands_pending ON commands(processed_at, id);
 `);
 
+ensureColumn("bot_status", "success_recheck_ms", "INTEGER NOT NULL DEFAULT 1000");
+ensureColumn("commands", "success_recheck_ms", "INTEGER");
+
 const nowIso = () => new Date().toISOString();
 
 db.prepare(`
-  INSERT INTO bot_status (id, state, message, interval_ms, updated_at)
-  VALUES (1, 'stopped', NULL, 5000, ?)
+  INSERT INTO bot_status (id, state, message, interval_ms, success_recheck_ms, updated_at)
+  VALUES (1, 'stopped', NULL, ?, ?, ?)
   ON CONFLICT(id) DO NOTHING
-`).run(nowIso());
+`).run(DEFAULT_INTERVAL_MS, DEFAULT_SUCCESS_RECHECK_MS, nowIso());
 
 const statements = {
-  status: db.prepare("SELECT state, message, interval_ms AS intervalMs, updated_at AS updatedAt FROM bot_status WHERE id = 1"),
+  status: db.prepare(`
+    SELECT
+      state,
+      message,
+      interval_ms AS intervalMs,
+      success_recheck_ms AS successRecheckMs,
+      updated_at AS updatedAt
+    FROM bot_status
+    WHERE id = 1
+  `),
   updateStatus: db.prepare(`
     UPDATE bot_status
-    SET state = @state, message = @message, interval_ms = @intervalMs, updated_at = @updatedAt
+    SET
+      state = @state,
+      message = @message,
+      interval_ms = @intervalMs,
+      success_recheck_ms = @successRecheckMs,
+      updated_at = @updatedAt
     WHERE id = 1
   `),
   insertCommand: db.prepare(`
-    INSERT INTO commands (command, interval_ms, created_at)
-    VALUES (@command, @intervalMs, @createdAt)
+    INSERT INTO commands (command, interval_ms, success_recheck_ms, created_at)
+    VALUES (@command, @intervalMs, @successRecheckMs, @createdAt)
   `),
   pendingCommands: db.prepare(`
-    SELECT id, command, interval_ms AS intervalMs, created_at AS createdAt
+    SELECT
+      id,
+      command,
+      interval_ms AS intervalMs,
+      success_recheck_ms AS successRecheckMs,
+      created_at AS createdAt
     FROM commands
     WHERE processed_at IS NULL
     ORDER BY id ASC
@@ -83,17 +110,23 @@ function getStatus() {
   return statements.status.get();
 }
 
-function setStatus(state, message = null, intervalMs = getStatus().intervalMs) {
+function setStatus(state, message = null, intervalMs = getStatus().intervalMs, successRecheckMs = getStatus().successRecheckMs) {
   statements.updateStatus.run({
     state,
     message,
     intervalMs,
+    successRecheckMs,
     updatedAt: nowIso(),
   });
 }
 
-function enqueueCommand(command, intervalMs = null) {
-  statements.insertCommand.run({ command, intervalMs, createdAt: nowIso() });
+function setTiming(intervalMs = getStatus().intervalMs, successRecheckMs = getStatus().successRecheckMs) {
+  const status = getStatus();
+  setStatus(status.state, status.message, intervalMs, successRecheckMs);
+}
+
+function enqueueCommand(command, intervalMs = null, successRecheckMs = null) {
+  statements.insertCommand.run({ command, intervalMs, successRecheckMs, createdAt: nowIso() });
 }
 
 function getPendingCommands() {
@@ -190,6 +223,7 @@ module.exports = {
   nowIso,
   getStatus,
   setStatus,
+  setTiming,
   enqueueCommand,
   getPendingCommands,
   markCommandProcessed,
@@ -197,3 +231,10 @@ module.exports = {
   getCounts,
   listTasks,
 };
+
+function ensureColumn(table, column, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!columns.some((item) => item.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}

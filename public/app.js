@@ -1,6 +1,7 @@
 const statusBadge = document.querySelector("#statusBadge");
 const statusMessage = document.querySelector("#statusMessage");
 const intervalInput = document.querySelector("#intervalInput");
+const successRecheckInput = document.querySelector("#successRecheckInput");
 const todayCount = document.querySelector("#todayCount");
 const weekCount = document.querySelector("#weekCount");
 const monthCount = document.querySelector("#monthCount");
@@ -29,9 +30,10 @@ async function api(path, options) {
 
 async function sendCommand(command) {
   const intervalMs = Math.max(1, Number(intervalInput.value) || 5) * 1000;
+  const successRecheckMs = Math.max(0.1, Number(successRecheckInput.value) || 1) * 1000;
   await api("/api/commands", {
     method: "POST",
-    body: JSON.stringify({ command, intervalMs }),
+    body: JSON.stringify({ command, intervalMs, successRecheckMs }),
   });
   await refresh();
 }
@@ -40,6 +42,7 @@ function renderStatus(status) {
   statusBadge.className = `badge ${status.state}`;
   statusBadge.textContent = status.state;
   intervalInput.value = Math.max(1, Math.round(status.intervalMs / 1000));
+  successRecheckInput.value = formatSeconds(status.successRecheckMs || 1000);
 
   const updated = new Date(status.updatedAt).toLocaleString();
   statusMessage.textContent = status.message
@@ -115,6 +118,7 @@ for (const input of [searchInput, fromInput, toInput]) {
 }
 
 intervalInput.addEventListener("change", () => sendCommand("setInterval"));
+successRecheckInput.addEventListener("change", () => sendCommand("setSuccessRecheck"));
 
 function debounce(fn, delay) {
   let timer;
@@ -122,6 +126,11 @@ function debounce(fn, delay) {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), delay);
   };
+}
+
+function formatSeconds(milliseconds) {
+  const seconds = milliseconds / 1000;
+  return Number.isInteger(seconds) ? String(seconds) : seconds.toFixed(1);
 }
 
 refresh().catch((error) => {

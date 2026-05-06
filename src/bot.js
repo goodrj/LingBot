@@ -19,7 +19,6 @@ const browserLaunchArgs = [
   "--disable-gpu",
   "--start-maximized",
 ];
-const SUCCESS_RECHECK_DELAY_MS = 1000;
 const ACCEPT_BUTTON_SELECTOR = "table tr button:has-text('Accept'), table tr a:has-text('Accept')";
 
 class BotController {
@@ -32,6 +31,7 @@ class BotController {
     this.timer = null;
     this.commandTimer = null;
     this.intervalMs = getStatus().intervalMs || 5000;
+    this.successRecheckMs = getStatus().successRecheckMs || 1000;
     this.commandTimer = setInterval(() => this.processCommands(), 750);
     this.commandTimer.unref?.();
   }
@@ -48,6 +48,8 @@ class BotController {
           await this.restart(item.intervalMs);
         } else if (item.command === "setInterval") {
           this.setIntervalMs(item.intervalMs);
+        } else if (item.command === "setSuccessRecheck") {
+          this.setSuccessRecheckMs(item.successRecheckMs);
         }
       } finally {
         markCommandProcessed(item.id);
@@ -59,10 +61,17 @@ class BotController {
     if (!Number.isFinite(intervalMs) || intervalMs < 1000) return;
     this.intervalMs = Math.round(intervalMs);
     const status = getStatus();
-    setStatus(status.state, status.message, this.intervalMs);
+    setStatus(status.state, status.message, this.intervalMs, this.successRecheckMs);
     if (this.running) {
       this.scheduleNext();
     }
+  }
+
+  setSuccessRecheckMs(successRecheckMs) {
+    if (!Number.isFinite(successRecheckMs) || successRecheckMs < 100) return;
+    this.successRecheckMs = Math.round(successRecheckMs);
+    const status = getStatus();
+    setStatus(status.state, status.message, this.intervalMs, this.successRecheckMs);
   }
 
   async start(intervalMs) {
@@ -71,11 +80,11 @@ class BotController {
     }
 
     if (this.running) {
-      setStatus("running", null, this.intervalMs);
+      setStatus("running", null, this.intervalMs, this.successRecheckMs);
       return;
     }
 
-    setStatus("running", null, this.intervalMs);
+    setStatus("running", null, this.intervalMs, this.successRecheckMs);
     this.running = true;
 
     try {
@@ -93,7 +102,7 @@ class BotController {
       this.timer = null;
     }
     await this.closeBrowser();
-    setStatus("stopped", message, this.intervalMs);
+    setStatus("stopped", message, this.intervalMs, this.successRecheckMs);
   }
 
   async restart(intervalMs) {
@@ -116,7 +125,10 @@ class BotController {
   async runCheckAndSchedule() {
     try {
       const acceptedCount = await this.checkOnce();
-      const delayMs = acceptedCount > 0 ? SUCCESS_RECHECK_DELAY_MS : this.intervalMs;
+      const status = getStatus();
+      this.intervalMs = status.intervalMs || this.intervalMs;
+      this.successRecheckMs = status.successRecheckMs || this.successRecheckMs;
+      const delayMs = acceptedCount > 0 ? this.successRecheckMs : this.intervalMs;
       this.scheduleNextAfter(delayMs);
     } catch (error) {
       await this.fail(error);
@@ -195,7 +207,7 @@ class BotController {
       this.timer = null;
     }
     await this.closeBrowser();
-    setStatus("error", error.message || String(error), this.intervalMs);
+    setStatus("error", error.message || String(error), this.intervalMs, this.successRecheckMs);
   }
 
   async checkOnce() {
@@ -220,7 +232,7 @@ class BotController {
     }
 
     const acceptedCount = await this.acceptVisibleTasks();
-    setStatus("running", null, this.intervalMs);
+    setStatus("running", null, this.intervalMs, this.successRecheckMs);
     return acceptedCount;
   }
 

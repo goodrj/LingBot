@@ -133,6 +133,10 @@ input {
   width: 86px;
 }
 
+.interval {
+  flex-wrap: wrap;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -30,7 +30,7 @@ http://localhost:3131
 4. Use **Stop** before closing the app.
 5. Keep the terminal open while the bot is running.
 
-The interval controls idle polling. When LingBot successfully accepts one or more tasks, it reloads again after 1 second to check for more. When no tasks are accepted, it waits for the configured interval.
+The check interval controls idle polling. The after-accept delay controls how quickly LingBot reloads after one or more tasks are accepted. When no tasks are accepted, it waits for the configured check interval. The dashboard accepts after-accept values as low as `0.1` seconds.
 
 ## Data Retention
 
