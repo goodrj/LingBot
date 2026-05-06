@@ -1,0 +1,23 @@
+{
+  "name": "lingbot",
+  "version": "1.0.0",
+  "description": "LingBot: local dashboard-controlled task accept bot for Linguana CMS.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "setup:login": "powershell -ExecutionPolicy Bypass -File scripts/setup-automation-profile.ps1",
+    "start:automation": "powershell -ExecutionPolicy Bypass -File scripts/start-automation-profile.ps1",
+    "start:existing-chrome": "powershell -ExecutionPolicy Bypass -File scripts/start-with-existing-chrome.ps1",
+    "restart:existing-chrome": "powershell -ExecutionPolicy Bypass -File scripts/restart-with-existing-chrome.ps1",
+    "install:browsers": "npx playwright install chromium"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "express": "^5.2.1",
+    "playwright": "^1.59.1"
+  }
+}

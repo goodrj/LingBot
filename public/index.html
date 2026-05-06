@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Linguana Bot Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Linguana Bot</h1>
+          <p id="statusMessage">Loading status...</p>
+        </div>
+        <span id="statusBadge" class="badge stopped">Stopped</span>
+      </header>
+
+      <section class="controls">
+        <div class="control-row">
+          <button id="startBtn" class="primary">Start</button>
+          <button id="stopBtn">Stop</button>
+          <button id="restartBtn">Restart</button>
+        </div>
+        <label class="interval">
+          <span>Check interval</span>
+          <input id="intervalInput" type="number" min="1" step="1" value="5">
+          <span>seconds</span>
+        </label>
+      </section>
+
+      <section class="stats" aria-label="Accepted task counts">
+        <article>
+          <span>Today</span>
+          <strong id="todayCount">0</strong>
+        </article>
+        <article>
+          <span>This week</span>
+          <strong id="weekCount">0</strong>
+        </article>
+        <article>
+          <span>This month</span>
+          <strong id="monthCount">0</strong>
+        </article>
+      </section>
+
+      <section class="history">
+        <div class="filters">
+          <input id="searchInput" type="search" placeholder="Search tasks">
+          <input id="fromInput" type="date">
+          <input id="toInput" type="date">
+          <button id="clearFiltersBtn" title="Clear filters">Clear</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Accepted</th>
+                <th>Type</th>
+                <th>Title</th>
+                <th>Channel</th>
+                <th>Languages</th>
+                <th>Due</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody id="tasksBody">
+              <tr><td colspan="7" class="empty">No accepted tasks yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
