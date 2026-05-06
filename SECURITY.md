@@ -1,0 +1,39 @@
+# Security Notes
+
+LingBot is a local automation tool. It should only be used on accounts and websites where the user has permission to automate task acceptance.
+
+## Sensitive Local Data
+
+The `data/` folder can contain:
+
+- Browser cookies.
+- Login session data.
+- Local accepted task history.
+- SQLite database files.
+
+Do not commit or upload `data/`.
+
+## Credentials
+
+LingBot does not ask for, store, or transmit passwords. Login is performed directly in Chrome during setup.
+
+## Network Scope
+
+The bot targets:
+
+```text
+https://cms.linguana.com/apps/gf
+```
+
+The dashboard is served locally at:
+
+```text
+http://localhost:3131
+```
+
+## Recommended Use
+
+- Run the app only on trusted machines.
+- Keep the terminal open only while actively using the dashboard.
+- Stop the bot before closing the browser or terminal.
+- Do not share local database or browser profile folders.

@@ -9,10 +9,17 @@
     "start:automation": "powershell -ExecutionPolicy Bypass -File scripts/start-automation-profile.ps1",
     "start:existing-chrome": "powershell -ExecutionPolicy Bypass -File scripts/start-with-existing-chrome.ps1",
     "restart:existing-chrome": "powershell -ExecutionPolicy Bypass -File scripts/restart-with-existing-chrome.ps1",
-    "install:browsers": "npx playwright install chromium"
+    "install:browsers": "npx playwright install chromium",
+    "check": "node --check src/bot.js && node --check src/db.js && node --check src/server.js && node --check public/app.js && node --check scripts/setup-login-browser.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "automation",
+    "playwright",
+    "sqlite",
+    "dashboard",
+    "local-first"
+  ],
+  "author": "Revi James",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

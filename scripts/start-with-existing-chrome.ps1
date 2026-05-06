@@ -16,15 +16,15 @@ if (-not (Test-Path $defaultUserData)) {
   throw "Chrome user-data folder was not found at: $defaultUserData"
 }
 
-$targetEmail = if ($env:LINGUANA_CHROME_EMAIL) { $env:LINGUANA_CHROME_EMAIL } else { "bluelicht04@gmail.com" }
+$targetEmail = if ($env:LINGUANA_CHROME_EMAIL) { $env:LINGUANA_CHROME_EMAIL } else { "" }
 $targetProfileName = if ($env:LINGUANA_CHROME_PROFILE) { $env:LINGUANA_CHROME_PROFILE } else { "" }
 $localStatePath = Join-Path $defaultUserData "Local State"
 
-if (-not $targetProfileName -and (Test-Path $localStatePath)) {
+if (-not $targetProfileName -and $targetEmail -and (Test-Path $localStatePath)) {
   $localState = Get-Content $localStatePath -Raw | ConvertFrom-Json
   $profileCache = $localState.profile.info_cache
   $matchingProfile = $profileCache.PSObject.Properties |
-    Where-Object { $_.Value.user_name -eq $targetEmail -or $_.Value.name -eq "Lady" } |
+    Where-Object { $_.Value.user_name -eq $targetEmail } |
     Select-Object -First 1
 
   if ($matchingProfile) {
@@ -33,7 +33,7 @@ if (-not $targetProfileName -and (Test-Path $localStatePath)) {
 }
 
 if (-not $targetProfileName) {
-  $targetProfileName = "Profile 2"
+  $targetProfileName = "Default"
 }
 
 $chromeProcesses = Get-Process chrome -ErrorAction SilentlyContinue
@@ -59,7 +59,11 @@ $chromeArgs = @(
 
 Start-Process -FilePath $chrome -ArgumentList $chromeArgs
 
-Write-Host "Using Chrome profile: $targetProfileName ($targetEmail)"
+if ($targetEmail) {
+  Write-Host "Using Chrome profile: $targetProfileName ($targetEmail)"
+} else {
+  Write-Host "Using Chrome profile: $targetProfileName"
+}
 Write-Host "Started Chrome with remote debugging at $env:LINGUANA_CDP_URL"
 
 $debugReady = $false
