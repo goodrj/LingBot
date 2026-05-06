@@ -19,6 +19,8 @@ const browserLaunchArgs = [
   "--disable-gpu",
   "--start-maximized",
 ];
+const SUCCESS_RECHECK_DELAY_MS = 1000;
+const ACCEPT_BUTTON_SELECTOR = "table tr button:has-text('Accept'), table tr a:has-text('Accept')";
 
 class BotController {
   constructor() {
@@ -114,7 +116,7 @@ class BotController {
   async runCheckAndSchedule() {
     try {
       const acceptedCount = await this.checkOnce();
-      const delayMs = acceptedCount > 0 ? 250 : this.intervalMs;
+      const delayMs = acceptedCount > 0 ? SUCCESS_RECHECK_DELAY_MS : this.intervalMs;
       this.scheduleNextAfter(delayMs);
     } catch (error) {
       await this.fail(error);
@@ -223,44 +225,63 @@ class BotController {
   }
 
   async acceptVisibleTasks() {
-    const acceptButtons = await this.page.locator("table tr button:has-text('Accept'), table tr a:has-text('Accept')").all();
     let acceptedCount = 0;
 
-    for (const button of acceptButtons) {
-      if (!(await button.isVisible().catch(() => false))) continue;
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const acceptButtons = this.page.locator(ACCEPT_BUTTON_SELECTOR);
+      const buttonCount = await acceptButtons.count().catch(() => 0);
+      if (buttonCount === 0) break;
 
-      const task = await button.evaluate((el) => {
-        const row = el.closest("tr");
-        if (!row) return null;
+      const button = acceptButtons.first();
+      if (!(await button.isVisible().catch(() => false))) break;
 
-        const normalize = (value) => (value || "").replace(/\s+/g, " ").trim();
-        const cells = Array.from(row.querySelectorAll("th, td")).map((cell) => normalize(cell.innerText));
-        const headers = Array.from(row.closest("table")?.querySelectorAll("thead th") || []).map((cell) => normalize(cell.innerText).toLowerCase());
-        const byHeader = (names, fallbackIndex) => {
-          const index = headers.findIndex((header) => names.some((name) => header.includes(name)));
-          return cells[index >= 0 ? index : fallbackIndex] || "";
-        };
-
-        return {
-          taskType: byHeader(["type", "task"], 0),
-          title: byHeader(["title", "name"], 1),
-          channel: byHeader(["channel"], 2),
-          languages: byHeader(["language", "locale"], 3),
-          dueDate: byHeader(["due", "deadline"], 4),
-          duration: byHeader(["duration", "length"], 5),
-          rawRow: cells.join(" | "),
-          taskKey: cells.join("|").toLowerCase(),
-        };
-      });
+      const task = await this.readTaskForButton(button);
 
       if (!task) continue;
-      await button.click({ timeout: 10000 });
-      saveAcceptedTask({ ...task, acceptedAt: nowIso() });
-      acceptedCount += 1;
-      await this.page.waitForTimeout(300);
+
+      try {
+        await button.click({ timeout: 3000 });
+        saveAcceptedTask({ ...task, acceptedAt: nowIso() });
+        acceptedCount += 1;
+        await this.page.waitForTimeout(300);
+      } catch (error) {
+        if (isTransientAcceptRace(error)) {
+          break;
+        }
+        throw error;
+      }
     }
 
     return acceptedCount;
+  }
+
+  async readTaskForButton(button) {
+    return button.evaluate((el) => {
+      const row = el.closest("tr");
+      if (!row) return null;
+
+      const normalize = (value) => (value || "").replace(/\s+/g, " ").trim();
+      const cells = Array.from(row.querySelectorAll("th, td")).map((cell) => normalize(cell.innerText));
+      const headers = Array.from(row.closest("table")?.querySelectorAll("thead th") || []).map((cell) => normalize(cell.innerText).toLowerCase());
+      const byHeader = (names, fallbackIndex) => {
+        const index = headers.findIndex((header) => names.some((name) => header.includes(name)));
+        return cells[index >= 0 ? index : fallbackIndex] || "";
+      };
+
+      return {
+        taskType: byHeader(["type", "task"], 0),
+        title: byHeader(["title", "name"], 1),
+        channel: byHeader(["channel"], 2),
+        languages: byHeader(["language", "locale"], 3),
+        dueDate: byHeader(["due", "deadline"], 4),
+        duration: byHeader(["duration", "length"], 5),
+        rawRow: cells.join(" | "),
+        taskKey: cells.join("|").toLowerCase(),
+      };
+    }).catch((error) => {
+      if (isTransientAcceptRace(error)) return null;
+      throw error;
+    });
   }
 }
 
@@ -280,6 +301,13 @@ function getLaunchErrorMessage(error) {
     return `Chrome opened and closed before LingBot could attach to its window. Close any Chrome window that was opened by "npm run setup:login", then restart LingBot. If it continues, reset the automation profile with "Remove-Item -Recurse -Force .\\data\\automation-profile" and run "npm run setup:login" again. Original error: ${message}`;
   }
   return message;
+}
+
+function isTransientAcceptRace(error) {
+  const message = error.message || String(error);
+  return message.includes("detached from the DOM") ||
+    message.includes("Element is not attached") ||
+    message.includes("Target closed");
 }
 
 module.exports = { BotController, TARGET_URL, userDataDir, cdpUrl };
