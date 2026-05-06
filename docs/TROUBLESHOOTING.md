@@ -66,6 +66,26 @@ cd "LingBot"
 npm run start:automation
 ```
 
+## `Browser.getWindowForTarget`: Browser Window Not Found
+
+Chrome opened and then closed before LingBot could attach to it. This is usually caused by a locked automation profile, a stale Chrome setup window, or a Chrome startup issue.
+
+First, close any Chrome window opened by LingBot setup, then run:
+
+```powershell
+cd "LingBot"
+npm run start:automation
+```
+
+If it still happens, reset only the automation browser profile and log in again:
+
+```powershell
+cd "LingBot"
+Remove-Item -Recurse -Force ".\data\automation-profile"
+npm run setup:login
+npm run start:automation
+```
+
 ## Port `3131` Is Already In Use
 
 Another copy of the dashboard is already running.

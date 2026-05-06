@@ -14,6 +14,11 @@ const TARGET_URL = "https://cms.linguana.com/apps/gf";
 const userDataDir = process.env.LINGUANA_USER_DATA_DIR || path.join(dataDir, "browser-profile");
 const browserChannel = process.env.LINGUANA_BROWSER_CHANNEL || undefined;
 const cdpUrl = process.env.LINGUANA_CDP_URL || "";
+const browserLaunchArgs = [
+  "--disable-blink-features=AutomationControlled",
+  "--disable-gpu",
+  "--start-maximized",
+];
 
 class BotController {
   constructor() {
@@ -131,18 +136,38 @@ class BotController {
       }
       this.ownsBrowser = false;
     } else {
-      this.context = await chromium.launchPersistentContext(userDataDir, {
-        headless: false,
-        channel: browserChannel,
-        viewport: { width: 1440, height: 900 },
-        args: ["--disable-blink-features=AutomationControlled"],
-      });
+      this.context = await this.launchPersistentBrowserContext();
       this.ownsBrowser = true;
     }
 
     this.page = this.context.pages()[0] || await this.context.newPage();
     this.page.setDefaultTimeout(15000);
     this.page.setDefaultNavigationTimeout(30000);
+  }
+
+  async launchPersistentBrowserContext() {
+    const primaryOptions = {
+      headless: false,
+      channel: browserChannel,
+      viewport: null,
+      ignoreDefaultArgs: ["--disable-sync"],
+      args: browserLaunchArgs,
+    };
+
+    try {
+      return await chromium.launchPersistentContext(userDataDir, primaryOptions);
+    } catch (error) {
+      if (!isEarlyChromeWindowFailure(error) || !browserChannel) {
+        throw new Error(getLaunchErrorMessage(error));
+      }
+
+      return chromium.launchPersistentContext(userDataDir, {
+        ...primaryOptions,
+        channel: undefined,
+      }).catch((retryError) => {
+        throw new Error(`${getLaunchErrorMessage(error)} Retry with bundled Chromium also failed: ${retryError.message}`);
+      });
+    }
   }
 
   async closeBrowser() {
@@ -242,6 +267,19 @@ class BotController {
 function isLoginUrl(url) {
   const lowered = url.toLowerCase();
   return lowered.includes("/login") || lowered.includes("signin") || lowered.includes("auth");
+}
+
+function isEarlyChromeWindowFailure(error) {
+  const message = error.message || String(error);
+  return message.includes("Browser.getWindowForTarget") || message.includes("Browser window not found");
+}
+
+function getLaunchErrorMessage(error) {
+  const message = error.message || String(error);
+  if (isEarlyChromeWindowFailure(error)) {
+    return `Chrome opened and closed before LingBot could attach to its window. Close any Chrome window that was opened by "npm run setup:login", then restart LingBot. If it continues, reset the automation profile with "Remove-Item -Recurse -Force .\\data\\automation-profile" and run "npm run setup:login" again. Original error: ${message}`;
+  }
+  return message;
 }
 
 module.exports = { BotController, TARGET_URL, userDataDir, cdpUrl };
