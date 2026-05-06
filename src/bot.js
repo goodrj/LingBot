@@ -73,8 +73,7 @@ class BotController {
 
     try {
       await this.ensureBrowser();
-      await this.checkOnce();
-      this.scheduleNext();
+      await this.runCheckAndSchedule();
     } catch (error) {
       await this.fail(error);
     }
@@ -96,16 +95,25 @@ class BotController {
   }
 
   scheduleNext() {
+    this.scheduleNextAfter(this.intervalMs);
+  }
+
+  scheduleNextAfter(delayMs) {
     if (!this.running) return;
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(async () => {
-      try {
-        await this.checkOnce();
-        this.scheduleNext();
-      } catch (error) {
-        await this.fail(error);
-      }
-    }, this.intervalMs);
+      await this.runCheckAndSchedule();
+    }, delayMs);
+  }
+
+  async runCheckAndSchedule() {
+    try {
+      const acceptedCount = await this.checkOnce();
+      const delayMs = acceptedCount > 0 ? 250 : this.intervalMs;
+      this.scheduleNextAfter(delayMs);
+    } catch (error) {
+      await this.fail(error);
+    }
   }
 
   async ensureBrowser() {
@@ -184,12 +192,15 @@ class BotController {
       throw new Error(`Redirected to login at ${this.page.url()}. Bot stopped.`);
     }
 
-    await this.acceptVisibleTasks();
+    const acceptedCount = await this.acceptVisibleTasks();
     setStatus("running", null, this.intervalMs);
+    return acceptedCount;
   }
 
   async acceptVisibleTasks() {
     const acceptButtons = await this.page.locator("table tr button:has-text('Accept'), table tr a:has-text('Accept')").all();
+    let acceptedCount = 0;
+
     for (const button of acceptButtons) {
       if (!(await button.isVisible().catch(() => false))) continue;
 
@@ -220,8 +231,11 @@ class BotController {
       if (!task) continue;
       await button.click({ timeout: 10000 });
       saveAcceptedTask({ ...task, acceptedAt: nowIso() });
+      acceptedCount += 1;
       await this.page.waitForTimeout(300);
     }
+
+    return acceptedCount;
   }
 }
 

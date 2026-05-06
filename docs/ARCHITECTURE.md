@@ -69,6 +69,7 @@ Responsibilities:
 - Find visible `Accept` buttons in task table rows.
 - Extract task row data before clicking.
 - Save accepted task records to SQLite.
+- Immediately schedule another check when a check accepts one or more tasks.
 
 ## Control Flow
 
@@ -81,6 +82,15 @@ Responsibilities:
 7. Dashboard refreshes from SQLite-backed API endpoints.
 
 This keeps the UI and automation loosely coupled while remaining simple enough to run locally.
+
+## Check Scheduling
+
+The dashboard interval is an idle polling interval, not a delay after every successful acceptance.
+
+- If a check accepts at least one task, LingBot schedules the next check almost immediately.
+- If a check accepts no tasks, LingBot waits for the configured interval before checking again.
+
+This allows LingBot to drain newly available tasks quickly while still avoiding constant reloads when no work is available.
 
 ## Browser Profile Strategy
 
