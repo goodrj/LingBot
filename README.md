@@ -6,6 +6,31 @@ It runs on your own computer. It opens a real Chrome window. It stores its data 
 
 > Use LingBot only on accounts and websites where you have permission to automate task acceptance.
 
+## At A Glance
+
+| Item | Details |
+| --- | --- |
+| Runs on | Windows with PowerShell |
+| Browser | Google Chrome |
+| Dashboard | `http://localhost:3131` |
+| Database | Local SQLite file |
+| Login style | Dedicated local Chrome profile |
+| Main command | `npm run start:automation` |
+
+## Documentation Map
+
+| I want to... | Read this |
+| --- | --- |
+| Run LingBot for the first time | [Quick Start](docs/QUICKSTART.md) |
+| Understand every dashboard control | [User Guide](docs/USER_GUIDE.md) |
+| Fix a problem | [Troubleshooting](docs/TROUBLESHOOTING.md) |
+| Learn unfamiliar terms | [Glossary](docs/GLOSSARY.md) |
+| See common questions | [FAQ](docs/FAQ.md) |
+| Understand the code | [Architecture](docs/ARCHITECTURE.md) |
+| Operate and update the app | [Operations](docs/OPERATIONS.md) |
+| Report a bug or ask for help | [Support](SUPPORT.md) |
+| Contribute changes | [Contributing](CONTRIBUTING.md) |
+
 ## What LingBot Does
 
 - Opens a visible Chrome browser.
@@ -149,6 +174,8 @@ The `data/` folder is ignored by Git. Do not upload it.
 
 ## Commands
 
+From the project folder:
+
 ```powershell
 npm run setup:login
 ```
@@ -173,6 +200,12 @@ npm run install:browsers
 
 Installs Playwright browser dependencies.
 
+```powershell
+npm start
+```
+
+Starts the dashboard with default environment settings. Most users should prefer `npm run start:automation`.
+
 ## Project Map
 
 ```text
@@ -188,6 +221,7 @@ LingBot/
 
 ## More Docs
 
+- [Docs Index](docs/README.md)
 - [Quick Start](docs/QUICKSTART.md)
 - [User Guide](docs/USER_GUIDE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
@@ -195,7 +229,10 @@ LingBot/
 - [FAQ](docs/FAQ.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Operations](docs/OPERATIONS.md)
+- [Design Decisions](docs/DESIGN_DECISIONS.md)
+- [Release Checklist](docs/RELEASE_CHECKLIST.md)
 - [Security Notes](SECURITY.md)
+- [Support](SUPPORT.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## License

@@ -36,6 +36,9 @@ npm run start:automation
 - Explain what a setting does before explaining how it works.
 - Use complete PowerShell commands.
 - Avoid unexplained acronyms.
+- Update `CHANGELOG.md` when behavior changes.
+- Update `docs/USER_GUIDE.md` when dashboard controls change.
+- Update `docs/TROUBLESHOOTING.md` when new errors are discovered.
 
 ## Validation
 
@@ -49,3 +52,11 @@ node --check src/server.js
 node --check public/app.js
 node --check scripts/setup-login-browser.js
 ```
+
+## Pull Request Checklist
+
+- The app still starts.
+- `npm run check` passes.
+- Docs match the UI.
+- No local data is committed.
+- The change is explained in plain language.

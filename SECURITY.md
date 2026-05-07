@@ -37,6 +37,7 @@ http://localhost:3131
 - Keep the terminal open only while actively using the dashboard.
 - Stop the bot before closing the browser or terminal.
 - Do not share local database or browser profile folders.
+- Review the target site's rules before automating.
 
 ## What Not To Upload
 
@@ -49,3 +50,9 @@ data/
 ```
 
 These can contain local browser/session data or local history.
+
+## Reporting Security Issues
+
+Do not post passwords, cookies, browser profile folders, or private task data in public issues.
+
+Instead, share a minimal description of the problem and remove private details from logs or screenshots.

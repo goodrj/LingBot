@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Improved repository documentation, support guidance, and release checklist.
 - Added randomized timing controls.
 - Added current and latest cluster counts.
 - Added configurable after-accept delay.
