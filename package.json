@@ -21,6 +21,14 @@
   ],
   "author": "Revi James",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/goodrj/LingBot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/goodrj/LingBot/issues"
+  },
+  "homepage": "https://github.com/goodrj/LingBot#readme",
   "type": "commonjs",
   "dependencies": {
     "better-sqlite3": "^12.9.0",

@@ -1,68 +1,58 @@
 # LingBot
 
-LingBot is a local dashboard-controlled browser bot for the Linguana CMS task page. It opens a real visible Chrome window, keeps a persistent local login profile, accepts available tasks from the task table, and records accepted task history in SQLite.
+LingBot is a local browser bot with a dashboard. It helps an authorized user watch the Linguana CMS task page, accept available projects, and keep a local history of what was accepted.
 
-> Scope: this app is intended for local personal use on a machine where the user is authorized to access `https://cms.linguana.com/apps/gf`.
+It runs on your own computer. It opens a real Chrome window. It stores its data locally. It does not ask for your password.
+
+> Use LingBot only on accounts and websites where you have permission to automate task acceptance.
+
+## What LingBot Does
+
+- Opens a visible Chrome browser.
+- Reuses a local login profile so you do not sign in every run.
+- Visits `https://cms.linguana.com/apps/gf`.
+- Looks for `Accept` buttons in the project table.
+- Reads project details before clicking accept.
+- Saves accepted projects to a local SQLite database.
+- Shows a dashboard at `http://localhost:3131`.
+- Stops if the page fails or redirects to login.
+
+## Why This Repo Exists
+
+This repo is meant to be understandable by a beginner and maintainable by a developer.
+
+If you are new:
+
+- Start with [Quick Start](docs/QUICKSTART.md).
+- Read [Glossary](docs/GLOSSARY.md) if a word feels unfamiliar.
+- Use [Troubleshooting](docs/TROUBLESHOOTING.md) when something breaks.
+
+If you are improving the app:
+
+- Read [Architecture](docs/ARCHITECTURE.md).
+- Read [Operations](docs/OPERATIONS.md).
+- Read [Contributing](CONTRIBUTING.md).
 
 ## Features
 
-- Visible Chrome automation using Playwright.
-- Persistent local automation profile so login survives restarts.
-- Dashboard at `http://localhost:3131`.
-- Start, Stop, Restart controls.
-- Adjustable check interval, defaulting to 10 seconds.
-- Configurable recheck delay after successful task acceptance.
-- Optional randomized timing for idle checks and after-accept reloads.
-- Current and latest completed project cluster counts.
-- Accepted task counts for today, this week, and this month.
-- Searchable and filterable accepted task history.
-- Local SQLite storage for bot status, commands, and accepted tasks.
-- Stops immediately on page load failure or login/auth redirect.
-- No auto-retry after error.
-
-## Tech Stack
-
-- Node.js for the app runtime.
-- Express for the local dashboard/API server.
-- Playwright for real-browser automation.
-- SQLite via `better-sqlite3` for local persistent data.
-- Plain HTML/CSS/JavaScript for the dashboard.
-
-This stack keeps deployment simple: clone, install, log in once, run locally.
-
-## Check Behavior
-
-The dashboard has two timing controls:
-
-- **Check interval**: used when no task is accepted. Minimum: `5` seconds.
-- **After accept**: used when one or more tasks were accepted. Minimum: `0.1` seconds.
-
-Each timing control can be randomized:
-
-- **Check interval randomization**: base value plus/minus 3 seconds, clamped to at least 5 seconds.
-- **After accept randomization**: base value plus/minus 0.2 seconds, clamped to at least 0.1 seconds.
-
-For example, set **After accept** to `0.2` seconds if you want the bot to check again very quickly after a successful accept.
-
-## Cluster Counts
-
-A cluster is a burst of successful accepts across consecutive checks.
-
-- **Current cluster** shows the in-progress burst count while LingBot is still finding accepted projects.
-- **Latest cluster** updates only after a completed burst has more than one accepted project.
-
-If LingBot accepts one project and the next check finds no more, **Latest cluster** does not update.
-
-## Requirements
-
-- Windows PowerShell.
-- Node.js 20 or newer.
-- Google Chrome.
-- Git, if installing from GitHub.
+- Dashboard controls: Start, Stop, Restart.
+- Check interval, defaulting to 10 seconds.
+- After-accept delay, defaulting to 1 second.
+- Optional randomized timing:
+  - Check interval: plus/minus 3 seconds.
+  - After accept: plus/minus 0.2 seconds.
+- Protective minimums:
+  - Check interval cannot go below 5 seconds.
+  - After accept cannot go below 0.1 seconds.
+- Current cluster count.
+- Latest completed cluster count.
+- Accepted counts for today, this week, and this month.
+- Searchable accepted-project history.
+- Local database storage.
 
 ## Quick Start
 
-Clone and install:
+Install:
 
 ```powershell
 git clone https://github.com/goodrj/LingBot.git
@@ -71,7 +61,7 @@ npm install
 npm run install:browsers
 ```
 
-Create the local automation login profile:
+Set up login:
 
 ```powershell
 cd "LingBot"
@@ -87,10 +77,10 @@ In the Chrome window that opens:
 https://cms.linguana.com/apps/gf
 ```
 
-3. Confirm the task page loads.
+3. Confirm the page loads.
 4. Close that Chrome window.
 
-Start the app:
+Run LingBot:
 
 ```powershell
 cd "LingBot"
@@ -103,126 +93,111 @@ Keep that terminal open, then open:
 http://localhost:3131
 ```
 
-Click **Start** in the dashboard.
+Click **Start**.
 
-## Daily Use
+## Dashboard Timing
 
-After first-time login setup, normal use is:
+LingBot has two timing settings.
 
-```powershell
-cd "LingBot"
-npm run start:automation
-```
+| Setting | What It Means | Minimum |
+| --- | --- | --- |
+| Check interval | How long to wait after finding no projects | 5 seconds |
+| After accept | How long to wait after accepting at least one project | 0.1 seconds |
 
-Then open:
+Randomization can be turned on for each setting.
 
-```text
-http://localhost:3131
-```
+Example:
 
-Use **Start**, **Stop**, or **Restart** from the dashboard.
+- Check interval is `10`.
+- Randomization is on.
+- LingBot waits somewhere between `7` and `13` seconds.
 
-## How It Works
+## Cluster Counts
 
-LingBot runs one local Node process with two responsibilities:
+A cluster is a burst of projects accepted close together.
 
-- Dashboard/API server: serves the browser UI and exposes database-backed API endpoints.
-- Bot controller: polls the local database for dashboard commands and controls Chrome.
+Example:
 
-The dashboard does not directly control the browser. It writes command records to SQLite and reads bot status/history from SQLite-backed endpoints. The bot independently polls those command records and updates status/history in the same database.
+1. LingBot accepts 1 project.
+2. It reloads and accepts another.
+3. It reloads and accepts 3 more.
+4. It reloads and finds none.
 
-See [Architecture](docs/ARCHITECTURE.md) for more detail.
+That completed cluster is `5`.
+
+Dashboard cards:
+
+- **Current cluster**: the burst currently happening.
+- **Latest cluster**: the most recent completed burst with more than 1 project.
+
+If only 1 project is accepted, **Latest cluster** does not change.
 
 ## Local Data
 
-LingBot stores all runtime data locally in:
+LingBot stores local runtime data in:
 
 ```text
 data/
 ```
 
-Important files:
+Important local files:
 
-- `data/linguana-bot.sqlite`: accepted task history, status, and command queue.
-- `data/automation-profile/`: persistent Chrome profile used by the automation flow.
+- `data/linguana-bot.sqlite`: accepted-project history and bot state.
+- `data/automation-profile/`: Chrome login/session profile.
 
-The `data/` folder is intentionally ignored by Git and should not be uploaded.
+The `data/` folder is ignored by Git. Do not upload it.
 
-## Available Commands
+## Commands
 
 ```powershell
 npm run setup:login
 ```
 
-Opens normal Chrome with LingBot's dedicated automation profile so you can sign in once.
+Creates or opens the local login profile.
 
 ```powershell
 npm run start:automation
 ```
 
-Starts the dashboard and uses the dedicated automation profile.
+Starts the dashboard and bot controller.
+
+```powershell
+npm run check
+```
+
+Runs syntax checks.
 
 ```powershell
 npm run install:browsers
 ```
 
-Installs the Playwright-managed browser dependencies.
+Installs Playwright browser dependencies.
 
-```powershell
-npm start
-```
-
-Starts the dashboard with default environment settings.
-
-Legacy/advanced commands:
-
-```powershell
-npm run start:existing-chrome
-npm run restart:existing-chrome
-```
-
-These attempt to control an existing Chrome profile through Chrome remote debugging. Current Chrome versions may block this for normal user profiles, so `start:automation` is the recommended path.
-
-## Configuration
-
-Environment variables:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `PORT` | `3131` | Dashboard port. |
-| `LINGUANA_USER_DATA_DIR` | `data/browser-profile` | Browser profile path for the default runner. |
-| `LINGUANA_BROWSER_CHANNEL` | unset | Playwright browser channel, for example `chrome`. |
-| `LINGUANA_CDP_URL` | unset | Advanced Chrome DevTools Protocol URL. |
-| `LINGUANA_CHROME_EMAIL` | unset | Legacy existing-Chrome profile lookup email. |
-| `LINGUANA_CHROME_PROFILE` | unset | Legacy existing-Chrome profile folder override. |
-
-## Troubleshooting
-
-Common problems and fixes are documented in [Troubleshooting](docs/TROUBLESHOOTING.md).
-
-## Security And Privacy
-
-- Credentials are not stored by LingBot code.
-- Chrome session data remains in the local `data/` folder.
-- Task history remains in the local SQLite database.
-- Do not commit or share the `data/` folder.
-- Only run this for accounts and websites you are authorized to use.
-
-See [Security Notes](SECURITY.md).
-
-## Project Structure
+## Project Map
 
 ```text
 LingBot/
-  public/                 Dashboard frontend
-  scripts/                PowerShell and setup helpers
+  public/                 Dashboard files
+  scripts/                PowerShell setup/start helpers
   src/
-    bot.js                Browser automation controller
-    db.js                 SQLite schema and queries
-    server.js             Express dashboard/API server
-  docs/                   Architecture, operations, troubleshooting
+    bot.js                Browser automation logic
+    db.js                 SQLite database logic
+    server.js             Dashboard/API server
+  docs/                   Beginner and developer docs
 ```
+
+## More Docs
+
+- [Quick Start](docs/QUICKSTART.md)
+- [User Guide](docs/USER_GUIDE.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Glossary](docs/GLOSSARY.md)
+- [FAQ](docs/FAQ.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Operations](docs/OPERATIONS.md)
+- [Security Notes](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## License
 
-ISC
+[ISC](LICENSE)

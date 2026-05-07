@@ -37,3 +37,15 @@ http://localhost:3131
 - Keep the terminal open only while actively using the dashboard.
 - Stop the bot before closing the browser or terminal.
 - Do not share local database or browser profile folders.
+
+## What Not To Upload
+
+Never upload:
+
+```text
+data/
+.env
+*.sqlite
+```
+
+These can contain local browser/session data or local history.
