@@ -9,7 +9,7 @@ fs.mkdirSync(dataDir, { recursive: true });
 const db = new Database(path.join(dataDir, "linguana-bot.sqlite"));
 db.pragma("journal_mode = WAL");
 
-const DEFAULT_INTERVAL_MS = 5000;
+const DEFAULT_INTERVAL_MS = 10000;
 const DEFAULT_SUCCESS_RECHECK_MS = 1000;
 const DEFAULT_INTERVAL_RANDOMIZED = 0;
 const DEFAULT_SUCCESS_RECHECK_RANDOMIZED = 0;

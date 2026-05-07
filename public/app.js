@@ -33,7 +33,7 @@ async function api(path, options) {
 }
 
 async function sendCommand(command) {
-  const intervalMs = Math.max(5, Number(intervalInput.value) || 5) * 1000;
+  const intervalMs = Math.max(5, Number(intervalInput.value) || 10) * 1000;
   const successRecheckMs = Math.max(0.1, Number(successRecheckInput.value) || 1) * 1000;
   await api("/api/commands", {
     method: "POST",

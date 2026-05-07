@@ -10,7 +10,7 @@ LingBot is a local dashboard-controlled browser bot for the Linguana CMS task pa
 - Persistent local automation profile so login survives restarts.
 - Dashboard at `http://localhost:3131`.
 - Start, Stop, Restart controls.
-- Adjustable check interval, defaulting to 5 seconds.
+- Adjustable check interval, defaulting to 10 seconds.
 - Configurable recheck delay after successful task acceptance.
 - Optional randomized timing for idle checks and after-accept reloads.
 - Current and latest completed project cluster counts.
