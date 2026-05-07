@@ -172,9 +172,26 @@ class BotController {
       this.ownsBrowser = true;
     }
 
-    this.page = this.context.pages()[0] || await this.context.newPage();
+    this.page = await this.createBotPage();
     this.page.setDefaultTimeout(15000);
     this.page.setDefaultNavigationTimeout(30000);
+  }
+
+  async createBotPage() {
+    const page = await this.context.newPage();
+    await page.bringToFront().catch(() => {});
+    await this.closeExtraBlankPages(page);
+    return page;
+  }
+
+  async closeExtraBlankPages(activePage) {
+    const pages = this.context.pages();
+    await Promise.all(pages.map(async (page) => {
+      if (page === activePage || page.isClosed()) return;
+      if (page.url() === "about:blank") {
+        await page.close().catch(() => {});
+      }
+    }));
   }
 
   async launchPersistentBrowserContext() {
@@ -231,10 +248,12 @@ class BotController {
 
   async checkOnce() {
     await this.ensureBrowser();
+    await this.page.bringToFront().catch(() => {});
     const response = await this.page.goto(TARGET_URL, {
       waitUntil: "domcontentloaded",
       timeout: 30000,
     });
+    await this.page.bringToFront().catch(() => {});
 
     const finalUrl = this.page.url();
     if (!response || !response.ok()) {
