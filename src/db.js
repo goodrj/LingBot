@@ -11,6 +11,10 @@ db.pragma("journal_mode = WAL");
 
 const DEFAULT_INTERVAL_MS = 5000;
 const DEFAULT_SUCCESS_RECHECK_MS = 1000;
+const DEFAULT_INTERVAL_RANDOMIZED = 0;
+const DEFAULT_SUCCESS_RECHECK_RANDOMIZED = 0;
+const DEFAULT_CURRENT_CLUSTER_COUNT = 0;
+const DEFAULT_LATEST_CLUSTER_COUNT = 0;
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS bot_status (
@@ -19,6 +23,10 @@ db.exec(`
     message TEXT,
     interval_ms INTEGER NOT NULL,
     success_recheck_ms INTEGER NOT NULL DEFAULT 1000,
+    interval_randomized INTEGER NOT NULL DEFAULT 0,
+    success_recheck_randomized INTEGER NOT NULL DEFAULT 0,
+    current_cluster_count INTEGER NOT NULL DEFAULT 0,
+    latest_cluster_count INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL
   );
 
@@ -40,6 +48,8 @@ db.exec(`
     command TEXT NOT NULL,
     interval_ms INTEGER,
     success_recheck_ms INTEGER,
+    interval_randomized INTEGER,
+    success_recheck_randomized INTEGER,
     created_at TEXT NOT NULL,
     processed_at TEXT
   );
@@ -50,15 +60,40 @@ db.exec(`
 `);
 
 ensureColumn("bot_status", "success_recheck_ms", "INTEGER NOT NULL DEFAULT 1000");
+ensureColumn("bot_status", "interval_randomized", "INTEGER NOT NULL DEFAULT 0");
+ensureColumn("bot_status", "success_recheck_randomized", "INTEGER NOT NULL DEFAULT 0");
+ensureColumn("bot_status", "current_cluster_count", "INTEGER NOT NULL DEFAULT 0");
+ensureColumn("bot_status", "latest_cluster_count", "INTEGER NOT NULL DEFAULT 0");
 ensureColumn("commands", "success_recheck_ms", "INTEGER");
+ensureColumn("commands", "interval_randomized", "INTEGER");
+ensureColumn("commands", "success_recheck_randomized", "INTEGER");
 
 const nowIso = () => new Date().toISOString();
 
 db.prepare(`
-  INSERT INTO bot_status (id, state, message, interval_ms, success_recheck_ms, updated_at)
-  VALUES (1, 'stopped', NULL, ?, ?, ?)
+  INSERT INTO bot_status (
+    id,
+    state,
+    message,
+    interval_ms,
+    success_recheck_ms,
+    interval_randomized,
+    success_recheck_randomized,
+    current_cluster_count,
+    latest_cluster_count,
+    updated_at
+  )
+  VALUES (1, 'stopped', NULL, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO NOTHING
-`).run(DEFAULT_INTERVAL_MS, DEFAULT_SUCCESS_RECHECK_MS, nowIso());
+`).run(
+  DEFAULT_INTERVAL_MS,
+  DEFAULT_SUCCESS_RECHECK_MS,
+  DEFAULT_INTERVAL_RANDOMIZED,
+  DEFAULT_SUCCESS_RECHECK_RANDOMIZED,
+  DEFAULT_CURRENT_CLUSTER_COUNT,
+  DEFAULT_LATEST_CLUSTER_COUNT,
+  nowIso()
+);
 
 const statements = {
   status: db.prepare(`
@@ -67,6 +102,10 @@ const statements = {
       message,
       interval_ms AS intervalMs,
       success_recheck_ms AS successRecheckMs,
+      interval_randomized AS intervalRandomized,
+      success_recheck_randomized AS successRecheckRandomized,
+      current_cluster_count AS currentClusterCount,
+      latest_cluster_count AS latestClusterCount,
       updated_at AS updatedAt
     FROM bot_status
     WHERE id = 1
@@ -78,12 +117,30 @@ const statements = {
       message = @message,
       interval_ms = @intervalMs,
       success_recheck_ms = @successRecheckMs,
+      interval_randomized = @intervalRandomized,
+      success_recheck_randomized = @successRecheckRandomized,
+      current_cluster_count = @currentClusterCount,
+      latest_cluster_count = @latestClusterCount,
       updated_at = @updatedAt
     WHERE id = 1
   `),
   insertCommand: db.prepare(`
-    INSERT INTO commands (command, interval_ms, success_recheck_ms, created_at)
-    VALUES (@command, @intervalMs, @successRecheckMs, @createdAt)
+    INSERT INTO commands (
+      command,
+      interval_ms,
+      success_recheck_ms,
+      interval_randomized,
+      success_recheck_randomized,
+      created_at
+    )
+    VALUES (
+      @command,
+      @intervalMs,
+      @successRecheckMs,
+      @intervalRandomized,
+      @successRecheckRandomized,
+      @createdAt
+    )
   `),
   pendingCommands: db.prepare(`
     SELECT
@@ -91,6 +148,8 @@ const statements = {
       command,
       interval_ms AS intervalMs,
       success_recheck_ms AS successRecheckMs,
+      interval_randomized AS intervalRandomized,
+      success_recheck_randomized AS successRecheckRandomized,
       created_at AS createdAt
     FROM commands
     WHERE processed_at IS NULL
@@ -110,23 +169,77 @@ function getStatus() {
   return statements.status.get();
 }
 
-function setStatus(state, message = null, intervalMs = getStatus().intervalMs, successRecheckMs = getStatus().successRecheckMs) {
+function setStatus(
+  state,
+  message = null,
+  intervalMs = getStatus().intervalMs,
+  successRecheckMs = getStatus().successRecheckMs,
+  intervalRandomized = getStatus().intervalRandomized,
+  successRecheckRandomized = getStatus().successRecheckRandomized,
+  currentClusterCount = getStatus().currentClusterCount,
+  latestClusterCount = getStatus().latestClusterCount
+) {
   statements.updateStatus.run({
     state,
     message,
     intervalMs,
     successRecheckMs,
+    intervalRandomized: intervalRandomized ? 1 : 0,
+    successRecheckRandomized: successRecheckRandomized ? 1 : 0,
+    currentClusterCount,
+    latestClusterCount,
     updatedAt: nowIso(),
   });
 }
 
-function setTiming(intervalMs = getStatus().intervalMs, successRecheckMs = getStatus().successRecheckMs) {
+function setTiming(
+  intervalMs = getStatus().intervalMs,
+  successRecheckMs = getStatus().successRecheckMs,
+  intervalRandomized = getStatus().intervalRandomized,
+  successRecheckRandomized = getStatus().successRecheckRandomized
+) {
   const status = getStatus();
-  setStatus(status.state, status.message, intervalMs, successRecheckMs);
+  setStatus(
+    status.state,
+    status.message,
+    intervalMs,
+    successRecheckMs,
+    intervalRandomized,
+    successRecheckRandomized,
+    status.currentClusterCount,
+    status.latestClusterCount
+  );
 }
 
-function enqueueCommand(command, intervalMs = null, successRecheckMs = null) {
-  statements.insertCommand.run({ command, intervalMs, successRecheckMs, createdAt: nowIso() });
+function setClusterCounts(currentClusterCount = getStatus().currentClusterCount, latestClusterCount = getStatus().latestClusterCount) {
+  const status = getStatus();
+  setStatus(
+    status.state,
+    status.message,
+    status.intervalMs,
+    status.successRecheckMs,
+    status.intervalRandomized,
+    status.successRecheckRandomized,
+    currentClusterCount,
+    latestClusterCount
+  );
+}
+
+function enqueueCommand(
+  command,
+  intervalMs = null,
+  successRecheckMs = null,
+  intervalRandomized = null,
+  successRecheckRandomized = null
+) {
+  statements.insertCommand.run({
+    command,
+    intervalMs,
+    successRecheckMs,
+    intervalRandomized,
+    successRecheckRandomized,
+    createdAt: nowIso(),
+  });
 }
 
 function getPendingCommands() {
@@ -224,6 +337,7 @@ module.exports = {
   getStatus,
   setStatus,
   setTiming,
+  setClusterCounts,
   enqueueCommand,
   getPendingCommands,
   markCommandProcessed,

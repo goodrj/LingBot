@@ -40,14 +40,14 @@ app.get("/api/tasks", (req, res) => {
 
 app.post("/api/commands", (req, res) => {
   const command = String(req.body.command || "");
-  const allowed = new Set(["start", "stop", "restart", "setInterval", "setSuccessRecheck"]);
+  const allowed = new Set(["start", "stop", "restart", "setTiming"]);
   if (!allowed.has(command)) {
     return res.status(400).json({ error: "Unknown command." });
   }
 
   const intervalMs = req.body.intervalMs == null ? null : Number(req.body.intervalMs);
-  if (intervalMs != null && (!Number.isFinite(intervalMs) || intervalMs < 1000)) {
-    return res.status(400).json({ error: "Interval must be at least 1000 ms." });
+  if (intervalMs != null && (!Number.isFinite(intervalMs) || intervalMs < 5000)) {
+    return res.status(400).json({ error: "Check interval must be at least 5000 ms." });
   }
 
   const successRecheckMs = req.body.successRecheckMs == null ? null : Number(req.body.successRecheckMs);
@@ -55,14 +55,19 @@ app.post("/api/commands", (req, res) => {
     return res.status(400).json({ error: "Success recheck delay must be at least 100 ms." });
   }
 
+  const intervalRandomized = req.body.intervalRandomized == null ? null : req.body.intervalRandomized ? 1 : 0;
+  const successRecheckRandomized = req.body.successRecheckRandomized == null ? null : req.body.successRecheckRandomized ? 1 : 0;
   const status = getStatus();
-  if (command === "setInterval") {
-    setTiming(intervalMs, status.successRecheckMs);
-  } else if (command === "setSuccessRecheck") {
-    setTiming(status.intervalMs, successRecheckMs);
+  if (command === "setTiming" || command === "start" || command === "restart") {
+    setTiming(
+      intervalMs ?? status.intervalMs,
+      successRecheckMs ?? status.successRecheckMs,
+      intervalRandomized ?? status.intervalRandomized,
+      successRecheckRandomized ?? status.successRecheckRandomized
+    );
   }
 
-  enqueueCommand(command, intervalMs, successRecheckMs);
+  enqueueCommand(command, intervalMs, successRecheckMs, intervalRandomized, successRecheckRandomized);
   res.status(202).json({ ok: true });
 });
 

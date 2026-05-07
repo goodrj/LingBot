@@ -7,6 +7,7 @@ const {
   getPendingCommands,
   markCommandProcessed,
   saveAcceptedTask,
+  setClusterCounts,
   nowIso,
 } = require("./db");
 
@@ -20,6 +21,10 @@ const browserLaunchArgs = [
   "--start-maximized",
 ];
 const ACCEPT_BUTTON_SELECTOR = "table tr button:has-text('Accept'), table tr a:has-text('Accept')";
+const MIN_INTERVAL_MS = 5000;
+const MIN_SUCCESS_RECHECK_MS = 100;
+const INTERVAL_RANDOM_RANGE_MS = 3000;
+const SUCCESS_RECHECK_RANDOM_RANGE_MS = 200;
 
 class BotController {
   constructor() {
@@ -32,6 +37,10 @@ class BotController {
     this.commandTimer = null;
     this.intervalMs = getStatus().intervalMs || 5000;
     this.successRecheckMs = getStatus().successRecheckMs || 1000;
+    this.intervalRandomized = Boolean(getStatus().intervalRandomized);
+    this.successRecheckRandomized = Boolean(getStatus().successRecheckRandomized);
+    this.currentClusterCount = getStatus().currentClusterCount || 0;
+    this.latestClusterCount = getStatus().latestClusterCount || 0;
     this.commandTimer = setInterval(() => this.processCommands(), 750);
     this.commandTimer.unref?.();
   }
@@ -41,15 +50,15 @@ class BotController {
     for (const item of commands) {
       try {
         if (item.command === "start") {
+          this.setTiming(item);
           await this.start(item.intervalMs);
         } else if (item.command === "stop") {
           await this.stop("Stopped by dashboard");
         } else if (item.command === "restart") {
+          this.setTiming(item);
           await this.restart(item.intervalMs);
-        } else if (item.command === "setInterval") {
-          this.setIntervalMs(item.intervalMs);
-        } else if (item.command === "setSuccessRecheck") {
-          this.setSuccessRecheckMs(item.successRecheckMs);
+        } else if (item.command === "setTiming") {
+          this.setTiming(item);
         }
       } finally {
         markCommandProcessed(item.id);
@@ -57,34 +66,40 @@ class BotController {
     }
   }
 
-  setIntervalMs(intervalMs) {
-    if (!Number.isFinite(intervalMs) || intervalMs < 1000) return;
-    this.intervalMs = Math.round(intervalMs);
+  setTiming({ intervalMs, successRecheckMs, intervalRandomized, successRecheckRandomized }) {
+    if (Number.isFinite(intervalMs) && intervalMs >= MIN_INTERVAL_MS) {
+      this.intervalMs = Math.round(intervalMs);
+    }
+    if (Number.isFinite(successRecheckMs) && successRecheckMs >= MIN_SUCCESS_RECHECK_MS) {
+      this.successRecheckMs = Math.round(successRecheckMs);
+    }
+    if (intervalRandomized != null) {
+      this.intervalRandomized = Boolean(intervalRandomized);
+    }
+    if (successRecheckRandomized != null) {
+      this.successRecheckRandomized = Boolean(successRecheckRandomized);
+    }
+
     const status = getStatus();
-    setStatus(status.state, status.message, this.intervalMs, this.successRecheckMs);
+    this.currentClusterCount = status.currentClusterCount || this.currentClusterCount;
+    this.latestClusterCount = status.latestClusterCount || this.latestClusterCount;
+    this.writeStatus(status.state, status.message);
     if (this.running) {
       this.scheduleNext();
     }
   }
 
-  setSuccessRecheckMs(successRecheckMs) {
-    if (!Number.isFinite(successRecheckMs) || successRecheckMs < 100) return;
-    this.successRecheckMs = Math.round(successRecheckMs);
-    const status = getStatus();
-    setStatus(status.state, status.message, this.intervalMs, this.successRecheckMs);
-  }
-
   async start(intervalMs) {
-    if (Number.isFinite(intervalMs) && intervalMs >= 1000) {
+    if (Number.isFinite(intervalMs) && intervalMs >= MIN_INTERVAL_MS) {
       this.intervalMs = Math.round(intervalMs);
     }
 
     if (this.running) {
-      setStatus("running", null, this.intervalMs, this.successRecheckMs);
+      this.writeStatus("running");
       return;
     }
 
-    setStatus("running", null, this.intervalMs, this.successRecheckMs);
+    this.writeStatus("running");
     this.running = true;
 
     try {
@@ -102,7 +117,8 @@ class BotController {
       this.timer = null;
     }
     await this.closeBrowser();
-    setStatus("stopped", message, this.intervalMs, this.successRecheckMs);
+    this.finishClusterIfNeeded();
+    this.writeStatus("stopped", message);
   }
 
   async restart(intervalMs) {
@@ -128,7 +144,9 @@ class BotController {
       const status = getStatus();
       this.intervalMs = status.intervalMs || this.intervalMs;
       this.successRecheckMs = status.successRecheckMs || this.successRecheckMs;
-      const delayMs = acceptedCount > 0 ? this.successRecheckMs : this.intervalMs;
+      this.intervalRandomized = Boolean(status.intervalRandomized);
+      this.successRecheckRandomized = Boolean(status.successRecheckRandomized);
+      const delayMs = this.getNextDelayMs(acceptedCount);
       this.scheduleNextAfter(delayMs);
     } catch (error) {
       await this.fail(error);
@@ -207,7 +225,8 @@ class BotController {
       this.timer = null;
     }
     await this.closeBrowser();
-    setStatus("error", error.message || String(error), this.intervalMs, this.successRecheckMs);
+    this.finishClusterIfNeeded();
+    this.writeStatus("error", error.message || String(error));
   }
 
   async checkOnce() {
@@ -232,8 +251,60 @@ class BotController {
     }
 
     const acceptedCount = await this.acceptVisibleTasks();
-    setStatus("running", null, this.intervalMs, this.successRecheckMs);
+    this.updateCluster(acceptedCount);
+    this.writeStatus("running");
     return acceptedCount;
+  }
+
+  getNextDelayMs(acceptedCount) {
+    if (acceptedCount > 0) {
+      return getRandomizedDelayMs(
+        this.successRecheckMs,
+        this.successRecheckRandomized,
+        SUCCESS_RECHECK_RANDOM_RANGE_MS,
+        MIN_SUCCESS_RECHECK_MS
+      );
+    }
+
+    return getRandomizedDelayMs(
+      this.intervalMs,
+      this.intervalRandomized,
+      INTERVAL_RANDOM_RANGE_MS,
+      MIN_INTERVAL_MS
+    );
+  }
+
+  updateCluster(acceptedCount) {
+    if (acceptedCount > 0) {
+      this.currentClusterCount += acceptedCount;
+      setClusterCounts(this.currentClusterCount, this.latestClusterCount);
+      return;
+    }
+
+    this.finishClusterIfNeeded();
+  }
+
+  finishClusterIfNeeded() {
+    if (this.currentClusterCount > 1) {
+      this.latestClusterCount = this.currentClusterCount;
+    }
+    if (this.currentClusterCount > 0) {
+      this.currentClusterCount = 0;
+      setClusterCounts(this.currentClusterCount, this.latestClusterCount);
+    }
+  }
+
+  writeStatus(state, message = null) {
+    setStatus(
+      state,
+      message,
+      this.intervalMs,
+      this.successRecheckMs,
+      this.intervalRandomized ? 1 : 0,
+      this.successRecheckRandomized ? 1 : 0,
+      this.currentClusterCount,
+      this.latestClusterCount
+    );
   }
 
   async acceptVisibleTasks() {
@@ -320,6 +391,15 @@ function isTransientAcceptRace(error) {
   return message.includes("detached from the DOM") ||
     message.includes("Element is not attached") ||
     message.includes("Target closed");
+}
+
+function getRandomizedDelayMs(baseMs, enabled, rangeMs, minimumMs) {
+  if (!enabled) {
+    return Math.max(minimumMs, Math.round(baseMs));
+  }
+
+  const offset = Math.random() * rangeMs * 2 - rangeMs;
+  return Math.max(minimumMs, Math.round(baseMs + offset));
 }
 
 module.exports = { BotController, TARGET_URL, userDataDir, cdpUrl };

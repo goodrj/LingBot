@@ -22,19 +22,37 @@
           <button id="stopBtn">Stop</button>
           <button id="restartBtn">Restart</button>
         </div>
-        <label class="interval">
-          <span>Check interval</span>
-          <input id="intervalInput" type="number" min="1" step="1" value="5">
-          <span>seconds</span>
-        </label>
-        <label class="interval">
-          <span>After accept</span>
-          <input id="successRecheckInput" type="number" min="0.1" step="0.1" value="1">
-          <span>seconds</span>
-        </label>
+        <div class="timing-grid">
+          <label class="interval">
+            <span>Check interval</span>
+            <input id="intervalInput" type="number" min="5" step="1" value="5">
+            <span>seconds</span>
+          </label>
+          <label class="toggle">
+            <input id="intervalRandomizedInput" type="checkbox">
+            <span>Randomize +/- 3s</span>
+          </label>
+          <label class="interval">
+            <span>After accept</span>
+            <input id="successRecheckInput" type="number" min="0.1" step="0.1" value="1">
+            <span>seconds</span>
+          </label>
+          <label class="toggle">
+            <input id="successRecheckRandomizedInput" type="checkbox">
+            <span>Randomize +/- 0.2s</span>
+          </label>
+        </div>
       </section>
 
       <section class="stats" aria-label="Accepted task counts">
+        <article>
+          <span>Current cluster</span>
+          <strong id="currentClusterCount">0</strong>
+        </article>
+        <article>
+          <span>Latest cluster</span>
+          <strong id="latestClusterCount">0</strong>
+        </article>
         <article>
           <span>Today</span>
           <strong id="todayCount">0</strong>

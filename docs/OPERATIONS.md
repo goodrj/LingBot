@@ -30,7 +30,16 @@ http://localhost:3131
 4. Use **Stop** before closing the app.
 5. Keep the terminal open while the bot is running.
 
-The check interval controls idle polling. The after-accept delay controls how quickly LingBot reloads after one or more tasks are accepted. When no tasks are accepted, it waits for the configured check interval. The dashboard accepts after-accept values as low as `0.1` seconds.
+The check interval controls idle polling. The after-accept delay controls how quickly LingBot reloads after one or more tasks are accepted. When no tasks are accepted, it waits for the configured check interval.
+
+Protective minimums:
+
+- Check interval: `5` seconds.
+- After accept: `0.1` seconds.
+
+Randomization can be toggled per timing control. Check interval randomization uses plus/minus 3 seconds. After-accept randomization uses plus/minus 0.2 seconds. Randomized values are clamped to the same protective minimums.
+
+Current cluster shows the active burst count. Latest cluster updates after a burst of more than one successful acceptance ends.
 
 ## Data Retention
 

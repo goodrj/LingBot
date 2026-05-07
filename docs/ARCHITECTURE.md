@@ -12,7 +12,7 @@ Files:
 - `public/styles.css`
 - `public/app.js`
 
-The dashboard is a plain browser UI served from Express. It displays bot status, task counts, interval controls, and accepted task history.
+The dashboard is a plain browser UI served from Express. It displays bot status, task counts, cluster counts, timing controls, and accepted task history.
 
 The dashboard does not call the bot object directly. User actions are sent to the API, then stored as command rows in SQLite.
 
@@ -89,8 +89,18 @@ The dashboard interval is an idle polling interval, not a delay after every succ
 
 - If a check accepts at least one task, LingBot schedules the next check using the configured success recheck delay.
 - If a check accepts no tasks, LingBot waits for the configured interval before checking again.
+- If randomization is enabled, LingBot applies a bounded random offset and clamps the result to the configured minimum.
 
 This allows LingBot to drain newly available tasks quickly while still avoiding constant reloads when no work is available.
+
+## Cluster Tracking
+
+A cluster begins when a check accepts one or more tasks. Each consecutive successful check adds to the current cluster count. The cluster ends when a check accepts no tasks.
+
+When a cluster ends:
+
+- If it contains more than one accepted task, it becomes the latest completed cluster.
+- If it contains exactly one accepted task, the latest completed cluster remains unchanged.
 
 ## Browser Profile Strategy
 

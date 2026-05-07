@@ -12,6 +12,8 @@ LingBot is a local dashboard-controlled browser bot for the Linguana CMS task pa
 - Start, Stop, Restart controls.
 - Adjustable check interval, defaulting to 5 seconds.
 - Configurable recheck delay after successful task acceptance.
+- Optional randomized timing for idle checks and after-accept reloads.
+- Current and latest completed project cluster counts.
 - Accepted task counts for today, this week, and this month.
 - Searchable and filterable accepted task history.
 - Local SQLite storage for bot status, commands, and accepted tasks.
@@ -32,10 +34,24 @@ This stack keeps deployment simple: clone, install, log in once, run locally.
 
 The dashboard has two timing controls:
 
-- **Check interval**: used when no task is accepted.
-- **After accept**: used when one or more tasks were accepted.
+- **Check interval**: used when no task is accepted. Minimum: `5` seconds.
+- **After accept**: used when one or more tasks were accepted. Minimum: `0.1` seconds.
 
-For example, set **After accept** to `0.2` seconds if you want the bot to check again very quickly after a successful accept. The minimum accepted value is `0.1` seconds.
+Each timing control can be randomized:
+
+- **Check interval randomization**: base value plus/minus 3 seconds, clamped to at least 5 seconds.
+- **After accept randomization**: base value plus/minus 0.2 seconds, clamped to at least 0.1 seconds.
+
+For example, set **After accept** to `0.2` seconds if you want the bot to check again very quickly after a successful accept.
+
+## Cluster Counts
+
+A cluster is a burst of successful accepts across consecutive checks.
+
+- **Current cluster** shows the in-progress burst count while LingBot is still finding accepted projects.
+- **Latest cluster** updates only after a completed burst has more than one accepted project.
+
+If LingBot accepts one project and the next check finds no more, **Latest cluster** does not update.
 
 ## Requirements
 

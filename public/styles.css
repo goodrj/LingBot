@@ -89,6 +89,7 @@ p {
 
 .control-row,
 .interval,
+.toggle,
 .filters {
   display: flex;
   align-items: center;
@@ -137,9 +138,26 @@ input {
   flex-wrap: wrap;
 }
 
+.timing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 10px 16px;
+  align-items: center;
+}
+
+.toggle {
+  color: var(--muted);
+  min-height: 40px;
+}
+
+.toggle input {
+  width: 18px;
+  height: 18px;
+}
+
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   margin-top: 16px;
 }
@@ -231,6 +249,10 @@ td {
   }
 
   .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .timing-grid {
     grid-template-columns: 1fr;
   }
 }

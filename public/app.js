@@ -2,6 +2,10 @@ const statusBadge = document.querySelector("#statusBadge");
 const statusMessage = document.querySelector("#statusMessage");
 const intervalInput = document.querySelector("#intervalInput");
 const successRecheckInput = document.querySelector("#successRecheckInput");
+const intervalRandomizedInput = document.querySelector("#intervalRandomizedInput");
+const successRecheckRandomizedInput = document.querySelector("#successRecheckRandomizedInput");
+const currentClusterCount = document.querySelector("#currentClusterCount");
+const latestClusterCount = document.querySelector("#latestClusterCount");
 const todayCount = document.querySelector("#todayCount");
 const weekCount = document.querySelector("#weekCount");
 const monthCount = document.querySelector("#monthCount");
@@ -29,11 +33,17 @@ async function api(path, options) {
 }
 
 async function sendCommand(command) {
-  const intervalMs = Math.max(1, Number(intervalInput.value) || 5) * 1000;
+  const intervalMs = Math.max(5, Number(intervalInput.value) || 5) * 1000;
   const successRecheckMs = Math.max(0.1, Number(successRecheckInput.value) || 1) * 1000;
   await api("/api/commands", {
     method: "POST",
-    body: JSON.stringify({ command, intervalMs, successRecheckMs }),
+    body: JSON.stringify({
+      command,
+      intervalMs,
+      successRecheckMs,
+      intervalRandomized: intervalRandomizedInput.checked,
+      successRecheckRandomized: successRecheckRandomizedInput.checked,
+    }),
   });
   await refresh();
 }
@@ -41,8 +51,12 @@ async function sendCommand(command) {
 function renderStatus(status) {
   statusBadge.className = `badge ${status.state}`;
   statusBadge.textContent = status.state;
-  intervalInput.value = Math.max(1, Math.round(status.intervalMs / 1000));
+  intervalInput.value = Math.max(5, Math.round(status.intervalMs / 1000));
   successRecheckInput.value = formatSeconds(status.successRecheckMs || 1000);
+  intervalRandomizedInput.checked = Boolean(status.intervalRandomized);
+  successRecheckRandomizedInput.checked = Boolean(status.successRecheckRandomized);
+  currentClusterCount.textContent = status.currentClusterCount || 0;
+  latestClusterCount.textContent = status.latestClusterCount || 0;
 
   const updated = new Date(status.updatedAt).toLocaleString();
   statusMessage.textContent = status.message
@@ -117,8 +131,14 @@ for (const input of [searchInput, fromInput, toInput]) {
   input.addEventListener("input", debounce(refresh, 250));
 }
 
-intervalInput.addEventListener("change", () => sendCommand("setInterval"));
-successRecheckInput.addEventListener("change", () => sendCommand("setSuccessRecheck"));
+for (const input of [
+  intervalInput,
+  successRecheckInput,
+  intervalRandomizedInput,
+  successRecheckRandomizedInput,
+]) {
+  input.addEventListener("change", () => sendCommand("setTiming"));
+}
 
 function debounce(fn, delay) {
   let timer;
