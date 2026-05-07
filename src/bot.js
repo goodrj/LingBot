@@ -248,12 +248,10 @@ class BotController {
 
   async checkOnce() {
     await this.ensureBrowser();
-    await this.page.bringToFront().catch(() => {});
     const response = await this.page.goto(TARGET_URL, {
       waitUntil: "domcontentloaded",
       timeout: 30000,
     });
-    await this.page.bringToFront().catch(() => {});
 
     const finalUrl = this.page.url();
     if (!response || !response.ok()) {
