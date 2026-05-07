@@ -62,8 +62,8 @@ If you are improving the app:
 
 - Dashboard controls: Start, Stop, Restart.
 - Check interval, defaulting to 10 seconds.
-- After-accept delay, defaulting to 1 second.
-- Optional randomized timing:
+- After-accept delay, defaulting to 0.3 seconds.
+- Randomized timing enabled by default:
   - Check interval: plus/minus 3 seconds.
   - After accept: plus/minus 0.2 seconds.
 - Protective minimums:
@@ -72,6 +72,7 @@ If you are improving the app:
 - Current cluster count.
 - Latest completed cluster count.
 - Accepted counts for today, this week, and this month.
+- Reset buttons for Today, This week, and This month counters without deleting accepted-project history.
 - Searchable accepted-project history.
 - Local database storage.
 
@@ -80,16 +81,19 @@ If you are improving the app:
 Install:
 
 ```powershell
+cd "C:\path\to\where\you\want\the\app"
 git clone https://github.com/goodrj/LingBot.git
-cd "LingBot"
+cd ".\LingBot"
 npm install
 npm run install:browsers
 ```
 
+Replace `C:\path\to\where\you\want\the\app` with the folder where you want to download LingBot. If your terminal is already inside the `LingBot` folder, skip the `cd ".\LingBot"` line.
+
 Set up login:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run setup:login
 ```
 
@@ -108,7 +112,7 @@ https://cms.linguana.com/apps/gf
 Run LingBot:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
@@ -130,6 +134,8 @@ LingBot has two timing settings.
 | After accept | How long to wait after accepting at least one project | 0.1 seconds |
 
 Randomization can be turned on for each setting.
+
+In a fresh install, both randomization toggles are on by default.
 
 Example:
 
@@ -156,6 +162,12 @@ Dashboard cards:
 - **Latest cluster**: the most recent completed burst with more than 1 project.
 
 If only 1 project is accepted, **Latest cluster** does not change.
+
+## Count Resets
+
+The Today, This week, and This month cards each have a reset button.
+
+Resetting a count only resets that dashboard number. It does not delete the accepted-project rows in the history table.
 
 ## Local Data
 

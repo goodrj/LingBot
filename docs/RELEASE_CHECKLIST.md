@@ -7,7 +7,7 @@ Use this before merging or publishing important changes.
 Run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run check
 ```
 
@@ -22,7 +22,7 @@ No syntax errors
 1. Start LingBot:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 

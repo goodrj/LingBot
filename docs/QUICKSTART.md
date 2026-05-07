@@ -7,18 +7,21 @@ This guide is for someone who just wants to run LingBot.
 Open PowerShell and run:
 
 ```powershell
+cd "C:\path\to\where\you\want\the\app"
 git clone https://github.com/goodrj/LingBot.git
-cd "LingBot"
+cd ".\LingBot"
 npm install
 npm run install:browsers
 ```
+
+Replace `C:\path\to\where\you\want\the\app` with the folder where you want to download LingBot. If your terminal is already inside the `LingBot` folder, skip the `cd ".\LingBot"` line.
 
 ## Step 2: Log In Once
 
 Run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run setup:login
 ```
 
@@ -43,7 +46,7 @@ You only need to repeat this when the login expires.
 Run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 

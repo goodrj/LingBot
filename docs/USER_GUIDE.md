@@ -51,7 +51,7 @@ This is how long LingBot waits after it successfully accepts at least one projec
 Default:
 
 ```text
-1 second
+0.3 seconds
 ```
 
 Minimum:
@@ -63,6 +63,8 @@ Minimum:
 ### Randomize
 
 Randomize makes the delay slightly different each time.
+
+Both randomize toggles are on by default in a fresh install.
 
 Check interval randomization:
 
@@ -95,6 +97,8 @@ If only one project was accepted, this card does not update.
 ### Today, This Week, This Month
 
 These show accepted project counts from the local database.
+
+Each card has a reset button. Resetting a count does not delete accepted projects from the history table.
 
 ## History Table
 

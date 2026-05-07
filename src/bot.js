@@ -36,9 +36,9 @@ class BotController {
     this.timer = null;
     this.commandTimer = null;
     this.intervalMs = getStatus().intervalMs || 5000;
-    this.successRecheckMs = getStatus().successRecheckMs || 1000;
-    this.intervalRandomized = Boolean(getStatus().intervalRandomized);
-    this.successRecheckRandomized = Boolean(getStatus().successRecheckRandomized);
+    this.successRecheckMs = getStatus().successRecheckMs || 300;
+    this.intervalRandomized = getStatus().intervalRandomized == null ? true : Boolean(getStatus().intervalRandomized);
+    this.successRecheckRandomized = getStatus().successRecheckRandomized == null ? true : Boolean(getStatus().successRecheckRandomized);
     this.currentClusterCount = getStatus().currentClusterCount || 0;
     this.latestClusterCount = getStatus().latestClusterCount || 0;
     this.commandTimer = setInterval(() => this.processCommands(), 750);

@@ -176,8 +176,16 @@ input {
 }
 
 .stats strong {
+  display: block;
   font-size: 34px;
   line-height: 1;
+}
+
+.stat-reset {
+  height: 32px;
+  margin-top: 14px;
+  padding: 0 10px;
+  color: var(--muted);
 }
 
 .history {

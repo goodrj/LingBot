@@ -7,7 +7,7 @@ The dashboard server is not running.
 Run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
@@ -22,7 +22,7 @@ http://localhost:3131
 Use the setup command, not the bot command:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run setup:login
 ```
 
@@ -31,7 +31,7 @@ This opens normal Chrome with the dedicated automation profile. Sign in there, c
 After that, start the dashboard:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
@@ -42,7 +42,7 @@ This happens when using the legacy existing-Chrome remote-debugging mode and Chr
 Recommended fix:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
@@ -55,14 +55,14 @@ The automation profile is not signed in or the session expired.
 Run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run setup:login
 ```
 
 Sign in again, confirm the Linguana page loads, close Chrome, then restart:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
@@ -73,14 +73,14 @@ Chrome opened and then closed before LingBot could attach to it. This is usually
 First, close any Chrome window opened by LingBot setup, then run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
 If it still happens, reset only the automation browser profile and log in again:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 Remove-Item -Recurse -Force ".\data\automation-profile"
 npm run setup:login
 npm run start:automation
@@ -99,7 +99,7 @@ Get-NetTCPConnection -LocalPort 3131 -ErrorAction SilentlyContinue | Select-Obje
 Then start again:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
@@ -108,7 +108,7 @@ npm run start:automation
 This deletes local login/session data and accepted task history.
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 Remove-Item -Recurse -Force ".\data"
 npm run setup:login
 ```

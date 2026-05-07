@@ -34,7 +34,7 @@ async function api(path, options) {
 
 async function sendCommand(command) {
   const intervalMs = Math.max(5, Number(intervalInput.value) || 10) * 1000;
-  const successRecheckMs = Math.max(0.1, Number(successRecheckInput.value) || 1) * 1000;
+  const successRecheckMs = Math.max(0.1, Number(successRecheckInput.value) || 0.3) * 1000;
   await api("/api/commands", {
     method: "POST",
     body: JSON.stringify({
@@ -48,13 +48,21 @@ async function sendCommand(command) {
   await refresh();
 }
 
+async function resetCount(period) {
+  await api("/api/counts/reset", {
+    method: "POST",
+    body: JSON.stringify({ period }),
+  });
+  await refresh();
+}
+
 function renderStatus(status) {
   statusBadge.className = `badge ${status.state}`;
   statusBadge.textContent = status.state;
   intervalInput.value = Math.max(5, Math.round(status.intervalMs / 1000));
-  successRecheckInput.value = formatSeconds(status.successRecheckMs || 1000);
-  intervalRandomizedInput.checked = Boolean(status.intervalRandomized);
-  successRecheckRandomizedInput.checked = Boolean(status.successRecheckRandomized);
+  successRecheckInput.value = formatSeconds(status.successRecheckMs || 300);
+  intervalRandomizedInput.checked = status.intervalRandomized == null ? true : Boolean(status.intervalRandomized);
+  successRecheckRandomizedInput.checked = status.successRecheckRandomized == null ? true : Boolean(status.successRecheckRandomized);
   currentClusterCount.textContent = status.currentClusterCount || 0;
   latestClusterCount.textContent = status.latestClusterCount || 0;
 
@@ -126,6 +134,10 @@ document.querySelector("#clearFiltersBtn").addEventListener("click", () => {
   toInput.value = "";
   refresh();
 });
+
+for (const button of document.querySelectorAll("[data-reset-period]")) {
+  button.addEventListener("click", () => resetCount(button.dataset.resetPeriod));
+}
 
 for (const input of [searchInput, fromInput, toInput]) {
   input.addEventListener("input", debounce(refresh, 250));

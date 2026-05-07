@@ -5,6 +5,7 @@ const {
   setTiming,
   enqueueCommand,
   getCounts,
+  resetCount,
   listTasks,
 } = require("./db");
 const { BotController } = require("./bot");
@@ -27,6 +28,16 @@ app.get("/api/counts", (_req, res) => {
     week: counts.week || 0,
     month: counts.month || 0,
   });
+});
+
+app.post("/api/counts/reset", (req, res) => {
+  const period = String(req.body.period || "");
+  if (!["today", "week", "month"].includes(period)) {
+    return res.status(400).json({ error: "Unknown count reset period." });
+  }
+
+  resetCount(period);
+  res.status(202).json({ ok: true });
 });
 
 app.get("/api/tasks", (req, res) => {

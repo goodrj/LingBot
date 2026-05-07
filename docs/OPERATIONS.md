@@ -3,7 +3,7 @@
 ## First-Time Setup
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm install
 npm run install:browsers
 npm run setup:login
@@ -12,7 +12,7 @@ npm run setup:login
 After login setup, start the dashboard:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
@@ -37,9 +37,11 @@ Protective minimums:
 - Check interval: `5` seconds.
 - After accept: `0.1` seconds.
 
-Randomization can be toggled per timing control. Check interval randomization uses plus/minus 3 seconds. After-accept randomization uses plus/minus 0.2 seconds. Randomized values are clamped to the same protective minimums.
+Randomization is on by default and can be toggled per timing control. Check interval randomization uses plus/minus 3 seconds. After-accept randomization uses plus/minus 0.2 seconds. Randomized values are clamped to the same protective minimums.
 
 Current cluster shows the active burst count. Latest cluster updates after a burst of more than one successful acceptance ends.
+
+The Today, This week, and This month cards can be reset from the dashboard. Resetting those cards does not delete task history.
 
 ## Data Retention
 
@@ -64,7 +66,7 @@ Do not upload that folder to GitHub because it contains local browser session da
 ## Updating From GitHub
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 git pull
 npm install
 ```
@@ -72,6 +74,6 @@ npm install
 Then run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```

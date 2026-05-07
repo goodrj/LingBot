@@ -27,14 +27,14 @@ That is intentional. If LingBot is no longer logged in, it stops instead of repe
 Run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run setup:login
 ```
 
 Then run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run start:automation
 ```
 
@@ -61,7 +61,7 @@ Do not upload the `data` folder to GitHub.
 This deletes login data and local history:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 Remove-Item -Recurse -Force ".\data"
 npm run setup:login
 ```

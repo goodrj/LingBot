@@ -8,7 +8,7 @@ This project tries to stay simple enough for a beginner to understand and useful
 
 ```powershell
 git clone https://github.com/goodrj/LingBot.git
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm install
 npm run install:browsers
 ```
@@ -16,7 +16,7 @@ npm run install:browsers
 ## Run Locally
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run setup:login
 npm run start:automation
 ```
@@ -45,7 +45,7 @@ npm run start:automation
 Before committing:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 node --check src/bot.js
 node --check src/db.js
 node --check src/server.js

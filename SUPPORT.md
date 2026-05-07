@@ -7,7 +7,7 @@ Use this guide when you need help with LingBot.
 Run:
 
 ```powershell
-cd "LingBot"
+cd "C:\path\to\LingBot"
 npm run check
 ```
 

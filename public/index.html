@@ -29,16 +29,16 @@
             <span>seconds</span>
           </label>
           <label class="toggle">
-            <input id="intervalRandomizedInput" type="checkbox">
+            <input id="intervalRandomizedInput" type="checkbox" checked>
             <span>Randomize +/- 3s</span>
           </label>
           <label class="interval">
             <span>After accept</span>
-            <input id="successRecheckInput" type="number" min="0.1" step="0.1" value="1">
+            <input id="successRecheckInput" type="number" min="0.1" step="0.1" value="0.3">
             <span>seconds</span>
           </label>
           <label class="toggle">
-            <input id="successRecheckRandomizedInput" type="checkbox">
+            <input id="successRecheckRandomizedInput" type="checkbox" checked>
             <span>Randomize +/- 0.2s</span>
           </label>
         </div>
@@ -56,14 +56,17 @@
         <article>
           <span>Today</span>
           <strong id="todayCount">0</strong>
+          <button class="stat-reset" data-reset-period="today" type="button">Reset</button>
         </article>
         <article>
           <span>This week</span>
           <strong id="weekCount">0</strong>
+          <button class="stat-reset" data-reset-period="week" type="button">Reset</button>
         </article>
         <article>
           <span>This month</span>
           <strong id="monthCount">0</strong>
+          <button class="stat-reset" data-reset-period="month" type="button">Reset</button>
         </article>
       </section>
 
